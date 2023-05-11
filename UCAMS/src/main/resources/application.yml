@@ -1,0 +1,15 @@
+server:
+  port: 8080
+mybatis-plus:
+  global-config:
+    db-config:
+      id-type: auto
+#  Mp日志，打开会导致数据库操作速度变慢
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/universityassetmanagementsystemdatabase?serverTimezone=UTC
+    username: root
+    password: 123456

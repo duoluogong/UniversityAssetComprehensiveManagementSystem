@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link href="../bootstrap-4.6.0-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../bootstrap-4.6.0-dist/css/bootstrap-icons.css" rel="stylesheet">
+    <link href="../plugins/elementui/index.css" rel="stylesheet">
+
+    <link href="../plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="../css/style.css" rel="stylesheet">
+    <script src="../js/jquery.min.1.10.2.js"></script>
+    <style type="text/css">
+        a {
+            color: #000;
+        }
+
+        a:hover {
+            color: #000;
+            text-decoration: none;
+        }
+
+        nav {
+            background: #007bff !important;
+            color: #fff;
+            height: 55px;
+            line-height: 55px;
+        }
+
+        nav > a:hover {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        nav > a {
+            color: #fff;
+            display: inline-block;
+            font-size: 19px;
+            width: 200px;
+            text-align: center;
+        }
+
+        nav .loginfo {
+            float: right;
+        }
+
+        .loginfo span {
+            display: inline-block;
+        }
+
+        .loginfo a {
+            color: #fff;
+        }
+
+        /*----------*/
+        .navleft {
+            position: absolute;
+            top: 55px;
+            bottom: 0px;
+            width: 200px;
+            left: 0;
+            border-right: 1px solid #f3f3f3;
+        }
+
+        .navleft .info {
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .info img {
+            width: 80px;
+        }
+
+        .items {
+            color: #212529;
+            line-height: 50px;
+            margin: 0px 10px 0px 25px;
+        }
+
+        .fu {
+            border-bottom: 1px dashed #ddd;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .navleft ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+            display: none;
+        }
+
+        .items a {
+            display: block;
+        }
+
+        .items a.active {
+            color: #007bff;
+            background: #f3f3f3;
+        }
+
+        .items a:hover {
+            color: #007bff;
+        }
+
+        .navleft li a {
+            padding-left: 10px;
+        }
+
+        .fu .bi:first-child {
+            margin-right: 5px;
+        }
+
+        .fu .bi:last-child {
+            float: right;
+            font-size: 22px;
+        }
+
+        .fu .bi {
+            transition: transform ease-in-out 0.2s;
+        }
+
+        .rotate90 {
+            transform: rotate(90deg);
+        }
+
+        /*----------*/
+        .navright {
+            position: absolute;
+            left: 201px;
+            right: 0px;
+            top: 55px;
+            bottom: 0px;
+        }
+    </style>
+</head>
+<body>
+<!-- 顶部导航 -->
+<nav>
+    <a class="title" href="#">
+        <i class="bi bi-columns-gap"></i>
+        高校资产综合管理系统
+    </a>
+    <div class="loginfo">
+        <span></span>
+        <a @click="loginout()" class="btn btn-link" href="login.html" title="登出">
+            <i class="bi bi-arrow-down-left-square"></i>注销</a>
+    </div>
+</nav>
+
+<div class="navleft">
+    <div class="info">
+<!--        <img alt="" src="imgs/1.png">-->
+        <div>用户名：{{userName}}</div>
+        <div>学院：{{academyId}}</div>
+        <div v-if="IPower==='1'">权限：院级管理员</div>
+        <div v-if="IPower==='2'">权限：校级管理员</div>
+    </div>
+    <div class="items">
+
+        <div class="fu">
+            <i class="bi bi-diagram-3"></i>
+            <span>基础信息管理</span>
+            <i class="bi bi-arrow-right-short"></i>
+        </div>
+        <ul>
+            <li><a href="users.html" target="main">用户信息</a></li>
+            <li><a href="assetdetails.html" target="main">资产信息</a></li>
+        </ul>
+        <div>
+            <div class="fu">
+                <i class="bi bi-file-ppt"></i>
+                <span>申请信息管理</span>
+                <i class="bi bi-arrow-right-short"></i>
+            </div>
+            <ul>
+                <li><a href="procure.html" target="main">采购申请管理</a></li>
+                <li><a href="leaseform.html" target="main">调用申请管理</a></li>
+            </ul>
+        </div>
+<!--        <div>-->
+<!--            <a class="fu" href="#">-->
+<!--                <i class="bi bi-person-square"></i>-->
+<!--                <span>个人中心</span>-->
+<!--            </a>-->
+<!--        </div>-->
+    </div>
+</div>
+
+<div class="navright">
+    <iframe frameborder="0" height="100%" id="main" name="main" src="" width="100%"></iframe>
+</div>
+
+<script>
+    // 防止误删
+    $('div.fu').click(function (event) {
+        if ($(this).hasClass('active')) {
+            $(this).removeClass('active');
+            $(this).find('.bi-arrow-right-short').removeClass('rotate90');
+            $(this).next().slideUp();
+        } else {
+            $(this).addClass('active');
+            $(this).find('.bi-arrow-right-short').addClass('rotate90');
+            $(this).next().slideDown();
+        }
+    });
+    $('.items a').click(function () {
+        $('.items a').removeClass('active');
+        $(this).addClass('active');
+    })
+
+</script>
+
+</body>
+
+
+<script src="../js/vue.js"></script>
+
+<script src="../plugins/elementui/index.js"></script>
+
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+
+<script src="../js/axios-0.18.0.js"></script>
+
+<script>
+    var vue = new Vue({
+        el: '.info',
+        data: {
+            userName: '',
+            IPower: '',
+            academyId:''
+        },
+
+        created() {
+
+            if (sessionStorage.getItem("login") === '1') {
+                this.userName = sessionStorage.getItem("Name")
+                this.IPower = sessionStorage.getItem("Power");
+                this.academyId=sessionStorage.getItem("academyId")
+                this.academyFormat(this.academyId);
+            } else {
+                sessionStorage.setItem("login", '3')
+                location.href = 'login.html';
+            }
+
+        },
+        methods: {
+            academyFormat(a) {
+                if (a === '1') {
+                    return this.academyId="其他"
+                } else if (a === '2') {
+                    return this.academyId="信息工程学院"
+                } else if (a === '3') {
+                    return this.academyId="经济与管理学院"
+                } else if (a === '4') {
+                    return this.academyId="语言文化传播学院"
+                } else if (a === '5') {
+                    return this.academyId="艺术学院"
+                }
+            },
+        }
+    })
+</script>
+
+
+</html>

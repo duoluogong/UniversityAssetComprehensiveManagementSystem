@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <link href="../css/login.css" rel="stylesheet"/>
+    <link href="../plugins/elementui/index.css" rel="stylesheet">
+    <link href="../plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <title>高校综合资产管理系统登录页面</title>
+
+</head>
+<body>
+<div id="bigBox">
+    <h1 style="font-family: 'agency fb';">登录</h1>
+
+    <div class="inputBox">
+        <div class="inputText">
+            <input placeholder="帐号" type="number" v-model="user.userId"/>
+        </div>
+        <div class="inputText">
+            <input placeholder="密码" type="password" v-model="user.userPwd"/>
+        </div>
+
+        <input @click="login" class="inputbutton" type="button" value="登录"/>
+        <!--        <a href="#"><input type="button" class="inputbutton" value="注册"/></a>-->
+
+    </div>
+</div>
+</body>
+
+
+<script src="../js/vue.js"></script>
+
+<script src="../plugins/elementui/index.js"></script>
+
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+
+<script src="../js/axios-0.18.0.js"></script>
+
+<script>
+    var vue = new Vue({
+        el: '#bigBox',
+        data: {
+            user: {
+                userId: '',
+                userPwd: ''
+            }
+
+        }, created() {
+            if (sessionStorage.getItem("login") === '3') {
+                this.$message.error("检测到您尚未登录，已为您跳转至登录页面");
+            }
+            sessionStorage.setItem("Name", "未登录");
+            sessionStorage.removeItem("Id");
+            sessionStorage.removeItem("Power");
+            sessionStorage.setItem("login", '0');
+        },
+        methods: {
+            login() {
+                if (this.user.userId.length < 1) {
+                    this.$message.error("账号不能为空");
+                } else {
+                    if (this.user.userPwd.length < 6) {
+                        this.$message.error("用户密码必须大于6位");
+                    } else {
+                        axios.post("/Users/login", this.user).then((res) => {
+                            if (res.data.flag) {
+                                console.log(res);
+                                sessionStorage.setItem("login", 1);
+                                sessionStorage.setItem("Name", res.data.data.userName);
+                                sessionStorage.setItem("Id", res.data.data.userId);
+                                sessionStorage.setItem("academyId", res.data.data.academyId);
+                                sessionStorage.setItem("Phone", res.data.data.userPhone);
+                                sessionStorage.setItem("Power", res.data.data.userPower);
+                                Power = sessionStorage.getItem("Power");
+                                if (Power === '3') {
+                                    this.$message.error("此账号已被禁用，请联系管理员了解详情！");
+                                } else if(Power==='0'){
+                                    location.href = 'userindex.html';
+                                }else{
+                                    location.href = 'index.html';
+                                }
+
+                            } else {
+                                this.$message.error("账号或密码错误");
+                            }
+                        })
+                    }
+                }
+            }
+        }
+    });
+
+</script>
+
+</html>

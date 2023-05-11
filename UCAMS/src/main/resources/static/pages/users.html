@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <!-- 页面meta -->
+
+    <meta charset="utf-8">
+
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+
+    <title>高校资产综合管理系统</title>
+
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+
+    <!-- 引入样式 -->
+
+    <link href="../plugins/elementui/index.css" rel="stylesheet">
+
+    <link href="../plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="../css/style.css" rel="stylesheet">
+
+</head>
+
+<body class="hold-transition">
+
+<div id="app">
+
+    <div class="content-header">
+
+        <h1>用户管理</h1>
+
+    </div>
+
+    <div class="app-container">
+
+        <div class="box">
+            <!--条件查询-->
+            <div class="filter-container">
+                <el-input class="filter-item" placeholder="用户ID" style="width: 220px;"
+                          v-model="pagination.userId"></el-input>
+
+                <el-input class="filter-item" placeholder="用户名称" style="width: 200px;"
+                          v-model="pagination.userName"></el-input>
+
+                <el-select placeholder="学院名称" size="large" v-if="Power==='2'" v-model="pagination.academyId">
+                    <el-option :key="item.value" :label="item.label" :value="item.value"
+                               v-for="item in academyOptions "/>
+                </el-select>
+
+                <el-select placeholder="用户权限" size="large" v-if="Power==='2'" v-model="pagination.userPower">
+                    <el-option :key="item.value" :label="item.label" :value="item.value" v-for="item in powerOptions"/>
+                </el-select>
+                <!--                <el-input placeholder="用户权限" v-model="pagination.userPower" style="width: 200px;"-->
+                <!--                          class="filter-item"></el-input>-->
+                <el-button @click="getAll()" class="dalfBut">查询</el-button>
+
+                <el-button @click="handleCreate()" class="butT" type="primary">新建</el-button>
+
+                <el-button @click="resetquery()" class="dalfBut">重置查询</el-button>
+            </div>
+
+            <!--列表展示-->
+            <el-table :data="dataList" current-row-key="id" highlight-current-row size="small" stripe>
+
+                <el-table-column align="center" label="序号" type="index"></el-table-column>
+
+                <el-table-column align="center" label="用户ID" prop="userId"></el-table-column>
+
+                <el-table-column align="center" label="用户名称" prop="userName"></el-table-column>
+
+                <el-table-column align="center" label="用户密码" prop="userPwd"></el-table-column>
+
+                <el-table-column :formatter="academyFormat" align="center" label="所属学院"
+                                 prop="academyId"></el-table-column>
+
+                <el-table-column align="center" label="联系电话" prop="userPhone"></el-table-column>
+
+                <el-table-column :formatter="userPowerFormat" align="center" label="用户权限"
+                                 prop="userPower" v-if="Power==='2'"></el-table-column>
+
+                <el-table-column align="center" label="操作" width="150px">
+
+                    <template slot-scope="scope">
+
+                        <el-button @click="handleUpdate(scope.row)" size="mini" type="primary">编辑</el-button>
+
+                        <el-button @click="handleDelete(scope.row)" size="mini" type="danger">删除</el-button>
+
+                    </template>
+
+                </el-table-column>
+
+            </el-table>
+
+            <!--分页组件-->
+            <div class="pagination-container">
+
+                <el-pagination
+                        :current-page="pagination.currentPage"
+
+                        :page-size="pagination.pageSize"
+
+                        :total="pagination.total"
+
+                        @current-change="handleCurrentChange"
+
+                        class="pagiantion"
+
+                        layout="total, prev, pager, next, jumper">
+
+                </el-pagination>
+
+            </div>
+
+            <!-- 新增标签弹层 -->
+
+            <div class="add-form">
+
+                <el-dialog :visible.sync="dialogFormVisible" title="新增用户">
+
+                    <el-form :model="formData" :rules="rules" label-position="right" label-width="100px"
+                             ref="dataAddForm">
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="用户名称" prop="userName">
+
+                                    <el-input v-model="formData.userName"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="用户密码" prop="userPwd">
+
+                                    <el-input v-model="formData.userPwd"></el-input>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row v-if="Power==='2'">
+
+                            <el-col :span="24">
+                                <el-form-item label="所属学院">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.academyId">
+
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in academyOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="联系电话" prop="userPhone">
+
+                                    <el-input maxlength="11" pattern="[0-9]{11}" show-word-limit type="tel"
+                                              v-model="formData.userPhone"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row v-if="Power==='2'">
+
+                            <el-col :span="24">
+                                <el-form-item label="用户权限">
+                                    <el-select placeholder="请选择" size="large" v-model="formData.userPower">
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   fit-input-width="true" v-for="item in powerOptions"
+                                        />
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <div class="dialog-footer" slot="footer">
+
+                        <el-button @click="cancel()">取消</el-button>
+
+                        <el-button @click="handleAdd()" type="primary">确定</el-button>
+
+                    </div>
+
+                </el-dialog>
+
+            </div>
+
+            <!-- 编辑标签弹层 -->
+
+            <div class="add-form">
+
+                <el-dialog :visible.sync="dialogFormVisible4Edit" title="编辑检查项">
+
+                    <el-form :model="formData" :rules="rules" label-position="right" label-width="100px"
+                             ref="dataEditForm">
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="用户名称" prop="userName">
+
+                                    <el-input v-model="formData.userName"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="用户密码" prop="userPwd">
+
+                                    <el-input v-model="formData.userPwd"></el-input>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row v-if="Power==='2'">
+
+                            <el-col :span="24">
+                                <el-form-item label="所属学院">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.academyId">
+
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in academyOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="联系电话" prop="userPhone">
+
+                                    <el-input maxlength="11" minlength="11" pattern="[0-9]{11}" show-word-limit
+                                              type="tel" v-model="formData.userPhone"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row v-if="Power==='2'">
+
+                            <el-col :span="24">
+                                <el-form-item label="用户权限">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.userPower">
+
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in powerOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <div class="dialog-footer" slot="footer">
+
+                        <el-button @click="cancel()">取消</el-button>
+
+                        <el-button @click="handleEdit()" type="primary">确定</el-button>
+
+                    </div>
+
+                </el-dialog>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+<!-- 引入组件库 -->
+
+<script src="../js/vue.js"></script>
+
+<script src="../plugins/elementui/index.js"></script>
+
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+
+<script src="../js/axios-0.18.0.js"></script>
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            Power: '',
+            dataList: [],//当前页要展示的列表数据
+            dialogFormVisible: false,//添加表单是否可见
+            dialogFormVisible4Edit: false,//编辑表单是否可见
+            formData: {},//表单数据
+            rules: {//校验规则
+                userName: [{required: true, message: '用户名称为必填项', trigger: 'blur'}],
+                userPwd: [{required: true, message: '用户密码为必填项', trigger: 'blur'}]
+            },
+            pagination: {//分页相关模型数据
+                currentPage: 1,//当前页码
+                pageSize: 10,//每页显示的记录数
+                total: 0,//总记录数
+                userId: "",
+                userName: "",
+                userPower: "",
+                academyId: "",
+                userPhone: '',
+                state: '',
+            },
+            powerOptions: [{
+                value: '0',
+                label: "普通用户"
+            }, {
+                value: '1',
+                label: "院级管理员"
+            }, {
+                value: '2',
+                label: "校级级管理员"
+            }, {
+                value: '3',
+                label: "禁用"
+            },],
+            academyOptions: [{
+                value: '1',
+                label: '其他'
+            }, {
+                value: '2',
+                label: "信息工程学院"
+            }, {
+                value: '3',
+                label: "经济与管理学院"
+            }, {
+                value: '4',
+                label: "语言文化传播学院"
+            }, {
+                value: '5',
+                label: "艺术学院"
+            },]
+        },
+
+        //钩子函数，VUE对象初始化完成后自动执行
+        created() {
+            this.getAll();
+        },
+
+        methods: {
+            //状态码转换
+            academyFormat(row, column) {
+                if (row.academyId === '1') {
+                    return '其他'
+                } else if (row.academyId === '2') {
+                    return '信息工程学院'
+                } else if (row.academyId === '3') {
+                    return '经济与管理学院'
+                } else if (row.academyId === '4') {
+                    return '语言文化传播学院'
+                } else if (row.academyId === '5') {
+                    return '艺术学院'
+                }
+            },
+
+            userPowerFormat(row, column) {
+                if (row.userPower === '0') {
+                    return '普通用户'
+                } else if (row.userPower === '1') {
+                    return '院级管理员'
+                } else if (row.userPower === '2') {
+                    return '校级管理员'
+                }else if (row.userPower === '3') {
+                    return '禁用'
+                }
+            },
+
+
+            //列表
+            getAll() {
+                this.Power = sessionStorage.getItem("Power");
+                param = "?userId=" + this.pagination.userId;
+                param += "&userName=" + this.pagination.userName;
+                if (this.Power === '1') {
+                    this.pagination.academyId = sessionStorage.getItem("academyId");
+                    state = sessionStorage.getItem("Power");
+                    this.pagination.userPower = parseInt(state) - 1;
+                }
+                param += "&academyId=" + this.pagination.academyId;
+                param += "&state=" + this.pagination.state;
+                param += "&userPower=" + this.pagination.userPower;
+                axios.get("/Users/" + this.pagination.currentPage + "/" + this.pagination.pageSize + param).then((res) => {
+                    //console.log(res.data);
+                    this.pagination.currentPage = res.data.data.current;
+                    this.pagination.pageSize = res.data.data.size;
+                    this.pagination.total = res.data.data.total;
+                    this.dataList = res.data.data.records;
+                })
+            },
+
+            //弹出添加窗口
+            handleCreate() {
+                this.dialogFormVisible = true;
+                this.resetForm();
+            },
+
+            //重置表单
+            resetForm() {
+                this.formData = {};
+            },
+
+            //添加
+            handleAdd() {
+                if (this.Power === '1') {
+                    this.formData.academyId = sessionStorage.getItem("academyId");
+                }
+                axios.post("/Users", this.formData).then((res) => {
+
+                    if (res.data.flag) {
+                        this.dialogFormVisible = false;
+                        this.$message.success("添加成功");
+                    } else {
+                        this.$message.error("添加失败");
+                    }
+
+                }).finally(() => {
+                    this.getAll();
+                })
+
+            },
+
+            //取消
+            cancel() {
+                this.dialogFormVisible = false;
+                this.dialogFormVisible4Edit = false;
+            },
+            // 删除
+            handleDelete(row) {
+                //console.log(row);
+                this.$confirm("是否永久删除用户ID：" + row.userId + "用户名:" + row.userName + "的记录？", "提示", {type: "info"}).then(() => {
+                    axios.delete("/Users/" + row.userId).then((res) => {
+                        if (res.data.flag) {
+                            this.$message.success("删除成功");
+                        } else {
+                            this.$message.error("数据同步失败！已自动刷新。");//删除失败存在于两个网页间异步操作
+                        }
+                    }).finally(() => {
+                        this.getAll();
+                    })
+                }).catch(() => {
+                })
+            },
+
+            //弹出编辑窗口
+            handleUpdate(row) {
+                axios.get("/Users/" + row.userId).then((rew) => {
+                    if (rew.data.flag && rew.data.data != null) {//修改不仅要查询成功还得有数据
+                        this.dialogFormVisible4Edit = true;
+                        this.formData = rew.data.data;
+                    } else {
+                        this.$message.error("数据同步失败！已自动刷新。");
+                    }
+                }).finally(() => {
+                    this.getAll();
+                })
+            },
+
+            //修改
+            handleEdit() {
+                axios.put("/Users", this.formData).then((res) => {
+
+                    if (res.data.flag) {
+                        this.dialogFormVisible4Edit = false;
+                        this.$message.success("修改成功");
+                    } else {
+                        this.$message.error("修改失败");
+                    }
+
+                }).finally(() => {
+                    this.getAll();
+                })
+            },
+
+            //重置查询条件
+            resetquery() {
+                this.pagination.userId = "";
+                this.pagination.userName = "";
+                this.pagination.userPower = "";
+                this.pagination.academyId = "";
+                this.getAll();
+            },
+
+            //切换页码
+            handleCurrentChange(currentPage) {
+                this.pagination.currentPage = currentPage;
+                this.getAll();
+            },
+        }
+    })
+
+</script>
+
+</html>

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <!-- 页面meta -->
+
+    <meta charset="utf-8">
+
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+
+    <title>高校资产综合管理系统</title>
+
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+
+    <!-- 引入样式 -->
+
+    <link href="../plugins/elementui/index.css" rel="stylesheet">
+
+    <link href="../plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="../css/style.css" rel="stylesheet">
+
+</head>
+
+<body class="hold-transition">
+
+<div id="app">
+
+    <div class="content-header">
+
+        <h1>调用申请管理</h1>
+
+    </div>
+
+    <div class="app-container">
+
+
+        <div class="box">
+
+            <div class="filter-container" v-if="Power==='2'">
+                <el-select placeholder="状态" size="large"  v-model="pagination.state" >
+                    <el-option :key="item.value" :label="item.label" :value="item.value"
+                               v-for="item in stateOptions "/>
+                </el-select>
+
+                <el-button @click="getAll()" class="dalfBut">查询</el-button>
+
+                <el-button @click="resetquery()" class="dalfBut">重置查询</el-button>
+
+            </div>
+
+            <el-table :data="dataList" current-row-key="id" highlight-current-row size="small" stripe>
+
+                <el-table-column align="center" label="序号" type="index"></el-table-column>
+
+                <el-table-column align="center" label="申请Id" prop="leaseformId" v-if="Power!=='0'"></el-table-column>
+
+                <el-table-column align="center" label="用户Id" prop="userId" v-if="Power!=='0'"></el-table-column>
+
+                <el-table-column align="center" label="用户姓名" prop="userName" v-if="Power!=='0'"></el-table-column>
+
+                <el-table-column :formatter="uacademyFormat" align="center" label="用户学院"
+                                 prop="uacademyId" v-if="Power!=='0'"></el-table-column>
+
+                <el-table-column align="center" label="联系电话" prop="userPhone" v-if="Power!=='0'"></el-table-column>
+
+                <el-table-column align="center" label="资产ID" prop="assetId"></el-table-column>
+
+                <el-table-column align="center" label="资产名称" prop="assetName"></el-table-column>
+
+                <el-table-column :formatter="categoryFormat" align="center" label="资产类型"
+                                 prop="categoryId"></el-table-column>
+
+                <el-table-column :formatter="academyFormat" align="center" label="所属学院"
+                                 prop="academyId"></el-table-column>
+
+                <el-table-column align="center" label="库存" prop="surplus" v-if="Power!=='0'"></el-table-column>
+
+                <el-table-column align="center" label="调用数量" prop="leaseNum"></el-table-column>
+
+                <el-table-column align="center" label="申请时间" prop="leaseDate"></el-table-column>
+
+                <el-table-column align="center" label="归还时间" prop="returnDate"></el-table-column>
+
+                <el-table-column :formatter="stateFormat" align="center" label="申请状态" prop="state"></el-table-column>
+
+<!--                <el-table-column :formatter="stateFormat" align="center" label="申请状态" prop="rstate" ></el-table-column>-->
+                <el-table-column align="center" label="操作" width="170px">
+
+                    <template slot-scope="scope">
+                        <el-button @click="agree(scope.row)" align="center" size="mini" type="primary"
+                                   v-show="Power!='0'&&scope.row.state!=3&&scope.row.state!=0&&scope.row.state!=5"
+                                   with="50%">通过
+                        </el-button>
+
+                        <el-button @click="disagree(scope.row)" align="center" size="mini" type="danger"
+                                   v-if="Power!='0'&&scope.row.state!=3&&scope.row.state!=0&&scope.row.state!=5&&scope.row.state!=4"
+                                   with="50%">驳回
+                        </el-button>
+
+                        <el-button @click="assetreturn(scope.row)" size="mini" type="primary"
+                                   v-if="Power==='0'&&scope.row.state===3"
+                                   with="50%">归还
+                        </el-button>
+
+                        <el-button @click="deletebyid(scope.row)" size="mini" type="danger"
+                                   v-if="Power==='0'&&scope.row.state<3"
+                                   with="50%">删除
+                        </el-button>
+
+                        <el-button @click="deletebyid(scope.row)" size="mini" type="danger"
+                                   v-if="Power==='2'&&scope.row.state==5"
+                                   with="50%">删除
+                        </el-button>
+
+                    </template>
+
+                </el-table-column>
+
+            </el-table>
+
+            <!--分页组件-->
+            <div class="pagination-container">
+
+                <el-pagination
+                        :current-page="pagination.currentPage"
+
+                        :page-size="pagination.pageSize"
+
+                        :total="pagination.total"
+
+                        @current-change="handleCurrentChange"
+
+                        class="pagiantion"
+
+                        layout="total, prev, pager, next, jumper">
+
+                </el-pagination>
+
+            </div>
+
+            <!-- 新增标签弹层 -->
+
+            <div class="add-form">
+
+                <el-dialog :visible.sync="dialogFormVisible" title="新增资产">
+
+                    <el-form :model="formData" :rules="rules" label-position="right" label-width="100px"
+                             ref="dataAddForm">
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="资产名称" prop="assetName">
+
+                                    <el-input v-model="formData.assetName"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+                                <el-form-item label="资产类型">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.categoryId">
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in categoryOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+                                <el-form-item label="所属学院">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.academyId">
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in academyOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="库存" prop="inventory">
+
+                                    <el-input type="number" v-model="formData.inventory"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+                                <el-form-item label="资产状态">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.state">
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in stateOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="备注" prop="note">
+
+                                    <el-input v-model="formData.note"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <div class="dialog-footer" slot="footer">
+
+                        <el-button @click="cancel()">取消</el-button>
+
+                        <el-button @click="handleAdd()" type="primary">确定</el-button>
+
+                    </div>
+
+                </el-dialog>
+
+            </div>
+
+            <!-- 编辑标签弹层 -->
+
+            <div class="add-form">
+
+                <el-dialog :visible.sync="dialogFormVisible4Edit" title="编辑检查项">
+
+                    <el-form :model="formData" :rules="rules" label-position="right" label-width="100px"
+                             ref="dataEditForm">
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="资产名称" prop="assetName">
+
+                                    <el-input v-model="formData.assetName"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+                                <el-form-item label="资产类型">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.categoryId">
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in categoryOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+                                <el-form-item label="所属学院">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.academyId">
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in academyOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+                            <el-form-item label="入库时间" prop="warehousingTime">
+                                <el-date-picker
+                                        placeholder="选择日期时间"
+                                        type="datetime"
+                                        v-model="formData.warehousingTime"
+                                        value-format="yyyy-MM-dd hh:mm:ss">
+                                </el-date-picker>
+                            </el-form-item>
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="总量" prop="inventory">
+
+                                    <el-input type="number" v-model="formData.inventory"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="库存" prop="surplus">
+
+                                    <el-input type="number" v-model="formData.surplus"></el-input>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="维修" prop="repairing">
+
+                                    <el-input id="repval" type="number" v-model="formData.repairing"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+                                <el-form-item label="资产状态">
+                                    <el-select placeholder="请选择" size="large" teleported="false"
+                                               v-model="formData.state">
+                                        <el-option :key="item.value" :label="item.label" :value="item.value"
+                                                   v-for="item in stateOptions"/>
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+
+                        </el-row>
+
+                        <el-row>
+
+                            <el-col :span="24">
+
+                                <el-form-item label="备注" prop="note">
+
+                                    <el-input v-model="formData.note"/>
+
+                                </el-form-item>
+
+                            </el-col>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <div class="dialog-footer" slot="footer">
+
+                        <el-button @click="cancel()">取消</el-button>
+
+                        <el-button @click="handleEdit()" type="primary">确定</el-button>
+
+                    </div>
+
+                </el-dialog>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+<!-- 引入组件库 -->
+
+<script src="../js/vue.js"></script>
+
+<script src="../plugins/elementui/index.js"></script>
+
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+
+<script src="../js/axios-0.18.0.js"></script>
+
+<script>
+
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            lstate: 0,
+            Power: '',
+            dataList: [],//当前页要展示的列表数据
+            dialogFormVisible: false,//添加表单是否可见
+            dialogFormVisible4Edit: false,//编辑表单是否可见
+            formData: {},//表单数据
+            rules: {//校验规则
+            },
+            pagination: {//分页相关模型数据
+                currentPage: 1,//当前页码
+                pageSize: 10,//每页显示的记录数
+                total: 0,//总记录数
+                assetId: "",
+                assetName: "",
+                categoryId: "",
+                academyId: "",
+                userId: "",
+                state: '',
+            },
+            powerOptions: [{
+                value: '0',
+                label: "普通用户"
+            }, {
+                value: '1',
+                label: "管理员"
+            },],
+            academyOptions: [{
+                value: '1',
+                label: '其他'
+            }, {
+                value: '2',
+                label: "信息工程学院"
+            }, {
+                value: '3',
+                label: "经济与管理学院"
+            }, {
+                value: '4',
+                label: "语言文化传播学院"
+            }, {
+                value: '5',
+                label: "艺术学院"
+            },],
+            stateOptions: [{
+                value: 0,
+                label: "已驳回"
+            }, {
+                value: 3,
+                label: "调用中"
+                }, {
+                value: 2,
+                label: "待处理"
+                }, {
+                value: 4,
+                label: "待确认"
+                },
+                {value: 5,
+                    label:"已归还"
+                },
+    ],
+
+
+            categoryOptions: [{
+                value: '1',
+                label: '其他'
+            }, {
+                value: '2',
+                label: "设备"
+            }, {
+                value: '3',
+                label: "书籍"
+            }, {
+                value: '4',
+                label: "建筑"
+            }, {
+                value: '5',
+                label: "土地"
+            }, {
+                value: '6',
+                label: "植物"
+            },],
+        },
+
+        //钩子函数，VUE对象初始化完成后自动执行
+        created() {
+            this.getAll();
+        },
+
+        methods: {
+
+            //状态码转换
+            academyFormat(row, column) {
+                if (row.academyId == 1) {
+                    return '其他'
+                } else if (row.academyId == 2) {
+                    return '信息工程学院'
+                } else if (row.academyId == 3) {
+                    return '经济与管理学院'
+                } else if (row.academyId == 4) {
+                    return '语言文化传播学院'
+                } else if (row.academyId == 5) {
+                    return '艺术学院'
+                }
+            },
+            uacademyFormat(row, column) {
+                if (row.uacademyId == 1) {
+                    return '其他'
+                } else if (row.uacademyId == 2) {
+                    return '信息工程学院'
+                } else if (row.uacademyId == 3) {
+                    return '经济与管理学院'
+                } else if (row.uacademyId == 4) {
+                    return '语言文化传播学院'
+                } else if (row.uacademyId == 5) {
+                    return '艺术学院'
+                }
+            },
+
+            stateFormat(row, column) {
+                if (row.state === 0) {
+                    return '已驳回'
+                } else if (row.state === 1) {
+                    return '待院级审批'
+                } else if (row.state === 2) {
+                    return '待校级审批'
+                } else if (row.state === 3) {
+                    return '调用中'
+                }else if (row.state === 4) {
+                    return '待确认'
+                }else if (row.state === 5) {
+                    return '已归还'
+                }
+            },
+
+            categoryFormat(row, column) {
+                if (row.categoryId = 1) {
+                    return '其他'
+                } else if (row.categoryId == 2) {
+                    return '设备'
+                } else if (row.categoryId == 3) {
+                    return '书籍'
+                } else if (row.categoryId == 4) {
+                    return '建筑'
+                } else if (row.categoryId ==5) {
+                    return '土地'
+                } else if (row.categoryId == 6) {
+                    return '植物'
+                }
+            },
+
+            //列表
+            getAll() {
+                param = "?";
+
+                this.Power = sessionStorage.getItem("Power");
+                if (this.Power === '0') {
+                    param += "userId=" + parseInt(sessionStorage.getItem("Id"));
+                } else if(this.Power === '1'){
+                    param += "state=1" ;
+                }else{
+                    param +="state="+this.pagination.state;
+
+                }
+                axios.get("/Leaseform/" + this.pagination.currentPage + "/" + this.pagination.pageSize + param).then((res) => {
+                    this.pagination.currentPage = res.data.data.current;
+                    this.pagination.pageSize = res.data.data.size;
+                    this.pagination.total = res.data.data.total;
+                    this.dataList = res.data.data.records;
+                    this.lstate=this.dataList.state;
+                })
+            },
+
+            //弹出添加窗口
+            handleCreate() {
+                this.dialogFormVisible = true;
+                this.resetForm();
+            },
+
+            //重置表单
+            resetForm() {
+                this.formData = {};
+            },
+
+            //添加
+            handleAdd() {
+                // this.formData.warehousingTime=new Date();
+                axios.post("/Assets", this.formData).then((res) => {
+
+                    if (res.data.flag) {
+                        this.dialogFormVisible = false;
+                        this.$message.success("添加成功");
+                    } else {
+                        this.$message.error("添加失败");
+                    }
+
+                }).finally(() => {
+                    this.getAll();
+                })
+
+            },
+
+            //取消
+            cancel() {
+                this.dialogFormVisible = false;
+                this.dialogFormVisible4Edit = false;
+            },
+            // 删除
+            deletebyid(row) {
+
+                    this.$confirm("是否确认删除申请 " + row.leaseformId, "提示", {type: "error"}).then(() => {
+                        axios.delete("/Leaseform/" + row.leaseformId).then((res) => {
+                            if (res.data.flag) {
+                                this.$message.success("删除成功");
+                            } else {
+                                this.$message.error("数据同步失败！已自动刷新。");//删除失败存在于两个网页间异步操作
+                            }
+                        }).finally(() => {
+                            this.getAll();
+                        })
+                    }).catch(() => {
+                    })
+
+            },
+
+            assetreturn(row){
+                this.$confirm("是否确认归还资产"+ row.assetName+",数量:"+row.leaseNum, "提示", {type: "info"}).then(() => {
+                   row.state+=1;
+
+                    axios.put("/Leaseform/"
+                        +row.state +'/'
+                        +row.leaseformId).then((res) => {
+                        if (res.data.flag) {
+                            this.$message.success("申请已提交，请耐心等待管理员确认");
+                        } else {
+                            this.$message.error("数据同步失败！已自动刷新。");
+                        }
+                    }).finally(() => {
+                        this.getAll();
+                    })
+                }).catch(() => {
+                })
+            },
+
+
+            //弹出编辑窗口
+            handleUpdate(row) {
+                axios.get("/Assets/" + row.assetId).then((rew) => {
+                    if (rew.data.flag && rew.data.data != null) {//修改不仅要查询成功还得有数据
+                        this.dialogFormVisible4Edit = true;
+                        this.formData = rew.data.data;
+                    } else {
+                        this.$message.error("数据同步失败！已自动刷新。");
+                    }
+                }).finally(() => {
+                    this.getAll();
+                })
+            },
+
+            //修改
+            handleEdit() {
+
+                axios.put("/Assets", this.formData).then((res) => {
+                    if (res.data.flag) {
+                        this.dialogFormVisible4Edit = false;
+                        this.$message.success("修改成功");
+                    } else {
+                        this.$message.error("修改失败");
+                    }
+                }).finally(() => {
+                    this.getAll();
+                })
+
+            },
+            agree(row) {
+                axios.get("/Leaseform/" + row.leaseformId).then((rew) => {
+                    if (rew.data.flag && rew.data.data != null) {//修改不仅要查询成功还得有数据
+
+
+                        if ( rew.data.data.state<3&&rew.data.data.surplus < rew.data.data.leaseNum) {//库存是否充足
+                            this.$message.error("库存不足！");
+                        } else {
+
+                            this.$confirm("是否确认通过？", "提示", {type: "info"}).then(() => {
+
+                                rew.data.data.state += 1;
+                                this.formData = rew.data.data;
+
+                                //当审批完成，要自动完成库存的更新
+                                if (this.formData.state === 3) {
+                                    axios.put("/Assets/"
+                                        + this.formData.surplus + '/'
+                                        + this.formData.leaseNum + '/'
+                                        + this.formData.assetId).then(() => {
+                                    });
+                                }
+
+                                if (this.formData.state === 5) {
+                                    axios.put("/Assets/r/"
+                                        + this.formData.surplus + '/'
+                                        + this.formData.leaseNum + '/'
+                                        + this.formData.assetId).then(() => {
+                                    });
+                                    this.formData.returnDate=new Date();
+                                    axios.put("/Leaseform/"
+                                        +this.formData.leaseformId+'/'
+                                        ,this.formData.returnDate)
+                                }
+
+                                axios.put("/Leaseform/"
+                                    +parseInt(this.formData.state) +'/'
+                                    +this.formData.leaseformId).then((res) => {
+                                    if (res.data.flag) {
+                                        this.$message.success("审批通过");
+                                    } else {
+                                        this.$message.error("数据同步失败！已自动刷新。");
+                                    }
+                                }).finally(() => {
+                                    this.getAll();
+                                })
+
+                            })
+
+                        }
+
+                    } else {
+                        this.$message.error("数据同步失败！已自动刷新。");
+                    }
+
+                }).finally(() => {
+                    this.getAll();
+                })
+
+            },
+
+            disagree(row) {
+                axios.get("/Leaseform/" + row.leaseformId).then((rew) => {
+                    if (rew.data.flag && rew.data.data != null) {//修改不仅要查询成功还得有数据
+                        this.$confirm("是否确认驳回用户" + rew.data.data.userId + "的请求", "提示", {type: "error"}).then(() => {
+                            rew.data.data.state = 0;
+                            this.formData = rew.data.data;
+                            axios.put("/Leaseform/"
+                                +parseInt(this.formData.state) +'/'
+                                +this.formData.leaseformId).then((res) => {
+                                if (res.data.flag) {
+                                    this.$message.success("已驳回请求")
+                                    this.getAll()
+                                } else {
+                                    this.$message.error("数据同步失败！已自动刷新。");
+                                }
+                            })
+                        })
+                    } else {
+                        this.$message.error("数据同步失败！已自动刷新。");
+                    }
+                })
+            },
+
+            //重置查询条件
+            resetquery() {
+                this.pagination.state = "";
+                this.getAll();
+            },
+
+            //切换页码
+            handleCurrentChange(currentPage) {
+                this.pagination.currentPage = currentPage;
+                this.getAll();
+            },
+        }
+    })
+
+</script>
+
+</html>

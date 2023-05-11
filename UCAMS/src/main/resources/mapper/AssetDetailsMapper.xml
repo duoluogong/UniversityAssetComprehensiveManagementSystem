@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace="相应Mapper的包位置"-->
+<mapper namespace="com.example.ucams.mapper.AssetDetailsMapper">
+    <update id="updateForlease">
+        update asset_details
+        set surplus =#{surplus}
+        where asset_id = #{aid};
+    </update>
+</mapper>
